@@ -68,7 +68,11 @@ class SendMessageToUserTool(FunctionTool[AstrAgentContext]):
                 },
                 "session": {
                     "type": "string",
-                    "description": "Optional. Target session string. Defaults to current session.",
+                    "description": (
+                        "Leave empty — the message will be sent to the current session automatically. "
+                        "Only set this if you need to target a different session AND you know "
+                        "the exact three-part format: 'platform_id:message_type:session_id'."
+                    ),
                 },
             },
             "required": ["messages"],
@@ -219,8 +223,25 @@ class SendMessageToUserTool(FunctionTool[AstrAgentContext]):
                 if isinstance(session, str)
                 else session
             )
-        except Exception as exc:
-            return f"error: invalid session: {exc}"
+        except Exception:
+            # LLM 在 cron 等主动场景下可能只传 session_id（如 oc_xxx），
+            # 而不是完整的三段式 platform_id:message_type:session_id。
+            # 此时用 current_session 的前两段补全。
+            # 注意：这里的session是传入的session参数，实际上是用户输入的session_id
+            # current_session才是完整的三段式session字符串。
+            # issue: https://github.com/AstrBotDevs/AstrBot/issues/7907
+            if isinstance(session, str) and current_session:
+                try:
+                    cur = MessageSession.from_str(current_session)
+                    target_session = MessageSession(
+                        platform_name=cur.platform_id,
+                        message_type=cur.message_type,
+                        session_id=session,
+                    )
+                except Exception:
+                    return f"error: invalid session: {session}"
+            else:
+                return f"error: invalid session: {session}"
 
         await context.context.context.send_message(
             target_session,
