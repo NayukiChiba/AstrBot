@@ -134,6 +134,52 @@ async def test_group_message_still_requires_cached_msg_id():
     )
 
 
+@pytest.mark.asyncio
+async def test_group_message_sends_with_cached_msg_id():
+    """GROUP_MESSAGE 在有缓存 msg_id 时应正常发送。"""
+    from astrbot.core.platform.sources.qqofficial.qqofficial_platform_adapter import (
+        QQOfficialPlatformAdapter,
+    )
+
+    mock_client = _make_mock_client()
+
+    with (
+        patch(
+            "astrbot.core.platform.sources.qqofficial.qqofficial_platform_adapter.botClient",
+            return_value=mock_client,
+        ),
+        patch.object(
+            QQOfficialPlatformAdapter,
+            "_extract_message_id",
+            return_value=None,
+        ),
+        patch(
+            "astrbot.core.platform.sources.qqofficial.qqofficial_platform_adapter.QQOfficialMessageEvent._parse_to_qqofficial",
+            new_callable=AsyncMock,
+            return_value=("hello", None, None, None, None, None, None),
+        ),
+    ):
+        adapter = QQOfficialPlatformAdapter(
+            platform_config={
+                "appid": "test_appid",
+                "secret": "test_secret",
+                "enable_group_c2c": True,
+                "enable_guild_direct_message": False,
+            },
+            platform_settings={},
+            event_queue=asyncio_get_queue(),
+        )
+
+        session = _make_group_session()
+        adapter._session_last_message_id = {session.session_id: "fake-msg-id-123"}
+        adapter._session_scene = {session.session_id: "group"}
+        await adapter._send_by_session_common(session, _make_plain_message())
+
+    assert mock_client.api.post_group_message.called, (
+        "GROUP_MESSAGE 应在有缓存 msg_id 时正常发送"
+    )
+
+
 def asyncio_get_queue():
     import asyncio
     return asyncio.Queue()
