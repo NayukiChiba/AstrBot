@@ -229,8 +229,10 @@ class SendMessageToUserTool(FunctionTool[AstrAgentContext]):
             # 此时用 current_session 的前两段补全。
             # 注意：这里的session是传入的session参数，实际上是用户输入的session_id
             # current_session才是完整的三段式session字符串。
+            # 仅当传入字符串不含 ':'（明显是裸 session_id）时才用 current_session 补全，
+            # 避免 LLM 传了带 ':' 但格式错误的目标 session 被错误修复。
             # issue: https://github.com/AstrBotDevs/AstrBot/issues/7907
-            if isinstance(session, str) and current_session:
+            if isinstance(session, str) and current_session and ":" not in session:
                 try:
                     cur = MessageSession.from_str(current_session)
                     target_session = MessageSession(
