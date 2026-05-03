@@ -69,9 +69,8 @@ class SendMessageToUserTool(FunctionTool[AstrAgentContext]):
                 "session": {
                     "type": "string",
                     "description": (
-                        "Leave empty — the message will be sent to the current session automatically. "
-                        "Only set this if you need to target a different session AND you know "
-                        "the exact three-part format: 'platform_id:message_type:session_id'."
+                        "Optional. Leave empty for the current session. "
+                        "Use 'platform_id:message_type:session_id' to target another session."
                     ),
                 },
             },
