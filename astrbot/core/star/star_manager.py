@@ -1883,9 +1883,8 @@ class PluginManager:
             )
             raise
         finally:
-            if (
-                (skip_failed_tracking or temp_desti_dir != desti_dir)
-                and os.path.isdir(temp_desti_dir)
+            if (skip_failed_tracking or temp_desti_dir != desti_dir) and os.path.isdir(
+                temp_desti_dir
             ):
                 try:
                     remove_dir(temp_desti_dir)
