@@ -120,6 +120,7 @@ class SendMessageToUserTool(FunctionTool[AstrAgentContext]):
                 return local_path, True
         except Exception as exc:
             logger.warning(f"Failed to check/download file from sandbox: {exc}")
+            raise
 
         raise FileNotFoundError(f"{component_type} path does not exist: {path}")
 
